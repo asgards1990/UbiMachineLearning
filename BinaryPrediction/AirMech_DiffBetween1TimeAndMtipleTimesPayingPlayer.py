@@ -14,11 +14,12 @@ classifier=RandomForestClassifier(n_estimators=1000,
                        max_features='auto',
                        oob_score=True,
                        verbose=0)
-
+                       
+print 'Retrieving and cleaning data...'     
 #Retrieving the raw data               
 file_location='RawData/AirMech_DiffBetween1TimeAndMtipleTimesPayingPlayer.csv'
 df = pd.DataFrame.from_csv(file_location, sep=',')
-
+print 'Data retrieved!'
 
 #cleaning data
 totalLength = len(df)
@@ -29,6 +30,7 @@ del df['CountryShort']
 for i in range (totalLength):
     if pd.isnull(df['lastPayGapBeforeSecondPayDayOrLastPlayDay'][i]):
         df['lastPayGapBeforeSecondPayDayOrLastPlayDay'][i] =0
+print 'Data cleaned! \nNow training...'
 
 #randomized train and test samples.                   
 df['is_train'] = np.random.uniform(0, 1, totalLength) <= .75
@@ -46,6 +48,9 @@ preds = classifier.predict(test[features])
 #crosstabChecking 
 print pd.crosstab(test['isMultipleTimesPayingPlayer'], preds, rownames=['actual'], colnames=['preds'])
 
+
+file_destination = 'CleanData/oneTimeAndMultipleTimesPayerProfiles'
+df.to_csv(file_destination,sep=',')
 
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
