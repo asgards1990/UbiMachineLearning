@@ -7,30 +7,32 @@ Created on Sat Nov 29 09:34:47 2014
 
 import numpy as np
 import pandas as pd
+pd.set_option('chained_assignment',None)
 from sklearn.ensemble import RandomForestClassifier
-classifier=RandomForestClassifier(n_estimators=1000, 
+classifier=RandomForestClassifier(n_estimators=500, 
                        max_depth=100,
                        min_samples_leaf=50,
                        max_features='auto',
                        oob_score=True,
                        verbose=0)
 
+print 'Retrieving and cleaning data...'  
 #Retrieving the raw data               
 file_location='RawData/Ubi100KFileLeaverFor60Days1WeekBufferFromLevel2.csv'
 df = pd.DataFrame.from_csv(file_location, sep=',')
-
+print 'Data retrieved!'
 
 #cleaning data
+print 'Now cleaning...'
 totalLength = len(df)
 index = np.arange(totalLength)
 df.index = index
 del df['Ip']
 del df['CountryShort']
-for i in range (totalLength):
-    if pd.isnull(df['paygap'][i]):
-        df['paygap'][i] =0
-    if pd.isnull(df['daysFrom20140718ToFirstPayDt'][i]):
-        df['daysFrom20140718ToFirstPayDt'][i]=0
+df.loc[pd.isnull(df['paygap']),'paygap'] =0
+df.loc[pd.isnull(df['daysFrom20140718ToFirstPayDt']),
+'daysFrom20140718ToFirstPayDt'] =0
+print 'Data cleaned! \nNow training...'
 
 #randomized train and test samples.                   
 df['is_train'] = np.random.uniform(0, 1, totalLength) <= .75
@@ -42,11 +44,14 @@ features = df.columns[:21]
 #training
 y, _ = pd.factorize(train['stopPlayingBeforeTheDayAtLeastLevel2'])
 classifier.fit(train[features],y)
+print "Data trained"
+
+print "Now predicting..."
 #prediction on test set
 preds = classifier.predict(test[features])
 
 #crosstabChecking 
-pd.crosstab(test['stopPlayingBeforeTheDayAtLeastLevel2'], preds, rownames=['actual'], colnames=['preds'])
+print pd.crosstab(test['stopPlayingBeforeTheDayAtLeastLevel2'], preds, rownames=['actual'], colnames=['preds'])
 
 
 from sklearn.metrics import precision_recall_curve
@@ -63,7 +68,7 @@ average_precision = average_precision_score(test['stopPlayingBeforeTheDayAtLeast
                                                         preds)
                                                         
 #they are in array because it computes precision and recall in relation to 0 
-#and 1 respectively. Teh last/fourth array is the number of occurences in the
+#and 1 respectively. The last/fourth array is the number of occurences in the
 #actual data.                                                        
 fscore = precision_recall_fscore_support(test['stopPlayingBeforeTheDayAtLeastLevel2'],
                                                         preds)                                                        
