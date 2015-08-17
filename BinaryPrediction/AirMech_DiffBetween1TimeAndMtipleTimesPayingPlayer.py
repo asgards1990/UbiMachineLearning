@@ -51,8 +51,10 @@ preds = classifier.predict(test[features])
 #crosstabChecking 
 print pd.crosstab(test['isMultipleTimesPayingPlayer'], preds, rownames=['actual'], colnames=['preds'])
 
+df['prediction'] =  df['isMultipleTimesPayingPlayer']
+df.loc[df['is_train']==False,'prediction'] = preds
 
-file_destination = 'CleanData/oneTimeAndMultipleTimesPayerProfiles'
+file_destination = 'CleanData/oneTimeAndMultipleTimesPayerProfiles.csv'
 df.to_csv(file_destination,sep=',')
 
 from sklearn.metrics import precision_recall_curve

@@ -18,7 +18,7 @@ classifier=RandomForestClassifier(n_estimators=500,
 
 print 'Retrieving and cleaning data...'  
 #Retrieving the raw data               
-file_location='RawData/Ubi100KFileLeaverFor60Days1WeekBufferFromLevel2.csv'
+file_location='RawData/test_67_37_lastDayToGetDate_oldFile.csv'
 df = pd.DataFrame.from_csv(file_location, sep=',')
 print 'Data retrieved!'
 
@@ -29,9 +29,10 @@ index = np.arange(totalLength)
 df.index = index
 del df['Ip']
 del df['CountryShort']
-df.loc[pd.isnull(df['paygap']),'paygap'] =0
-df.loc[pd.isnull(df['daysFrom20140718ToFirstPayDt']),
-'daysFrom20140718ToFirstPayDt'] =0
+df.fillna(0,inplace=True)
+#df.loc[pd.isnull(df['paygap']),'paygap'] =0
+#df.loc[pd.isnull(df['daysFromFirstPlayedDtToFirstPayDt']),
+#'daysFromFirstPlayedDtToFirstPayDt'] =0
 print 'Data cleaned! \nNow training...'
 
 #randomized train and test samples.                   
@@ -42,7 +43,7 @@ train, test = df[df['is_train']==True], df[df['is_train']==False]
 features = df.columns[:21]
 
 #training
-y, _ = pd.factorize(train['stopPlayingBeforeTheDayAtLeastLevel2'])
+y, _ = pd.factorize(train['Leaver'])
 classifier.fit(train[features],y)
 print "Data trained"
 
@@ -51,8 +52,13 @@ print "Now predicting..."
 preds = classifier.predict(test[features])
 
 #crosstabChecking 
-print pd.crosstab(test['stopPlayingBeforeTheDayAtLeastLevel2'], preds, rownames=['actual'], colnames=['preds'])
+print pd.crosstab(test['Leaver'], preds, rownames=['actual'], colnames=['preds'])
 
+df['prediction'] =  df['Leaver']
+df.loc[df['is_train']==False,'prediction'] = preds
+
+file_destination = 'CleanData/LeaversOrNotProfiles.csv'
+df.to_csv(file_destination,sep=',')
 
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
@@ -62,13 +68,13 @@ precision = dict()
 recall = dict()
 average_precision = dict()
 
-prc = precision_recall_curve(test['stopPlayingBeforeTheDayAtLeastLevel2'],
+prc = precision_recall_curve(test['Leaver'],
                                                         preds)
-average_precision = average_precision_score(test['stopPlayingBeforeTheDayAtLeastLevel2'],
+average_precision = average_precision_score(test['Leaver'],
                                                         preds)
                                                         
 #they are in array because it computes precision and recall in relation to 0 
 #and 1 respectively. The last/fourth array is the number of occurences in the
 #actual data.                                                        
-fscore = precision_recall_fscore_support(test['stopPlayingBeforeTheDayAtLeastLevel2'],
+fscore = precision_recall_fscore_support(test['Leaver'],
                                                         preds)                                                        
